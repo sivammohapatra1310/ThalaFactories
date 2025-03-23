@@ -1,24 +1,75 @@
 import React, { useEffect } from 'react';
 
 export default function SignupPage() {
-  useEffect(() => {
-    // Initialize Google Identity Services for signup page as well if needed
-    if (window.google) {
-      window.google.accounts.id.initialize({
-        client_id: "YOUR_GOOGLE_CLIENT_ID", // Replace with your client id
-        callback: (response) => {
-          console.log("Google Sign In Response:", response);
-          // Handle the response (e.g., send token to your backend)
+  const handleGoogleSignIn = (response) => {
+    try {
+      if (response.error) {
+        throw new Error(response.error);
+      }
+      
+      // Verify the token with your backend
+      const { credential } = response;
+      console.log("Google Sign-In Credential:", credential);
+      
+      // Example API call for signup
+      fetch('/api/auth/google-signup', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
         },
+        body: JSON.stringify({ token: credential }),
+      })
+      .then(response => response.json())
+      .then(data => {
+        console.log("Signup successful:", data);
+        // Redirect to login or dashboard
+      })
+      .catch(error => {
+        console.error('Signup failed:', error);
       });
-      window.google.accounts.id.renderButton(
-        document.getElementById("google-signin-button"),
-        { theme: "outline", size: "large" }
-      );
+    } catch (error) {
+      console.error('Google Sign-In Error:', error);
+    }
+  };
+
+  useEffect(() => {
+    const initializeGoogle = () => {
+      if (window.google) {
+        window.google.accounts.id.initialize({
+          client_id: process.env.REACT_APP_GOOGLE_CLIENT_ID,
+          callback: handleGoogleSignIn,
+          context: 'signup'
+        });
+
+        window.google.accounts.id.renderButton(
+          document.getElementById("google-signup-button"),
+          {
+            type: "standard",
+            theme: "outline",
+            size: "large",
+            text: "signup_with",
+            width: "300"
+          }
+        );
+      }
+    };
+
+    if (window.google) {
+      initializeGoogle();
+    } else {
+      const script = document.createElement('script');
+      script.src = 'https://accounts.google.com/gsi/client';
+      script.async = true;
+      script.defer = true;
+      script.onload = initializeGoogle;
+      document.body.appendChild(script);
     }
   }, []);
 
+  // Rest of your component remains the same...
+
   return (
+    
     <div style={styles.container}>
       <div style={styles.card}>
         <h1 style={styles.title}>Factory Simulation</h1>
@@ -68,8 +119,8 @@ export default function SignupPage() {
 
         {/* Social Sign-In Button (Google only) */}
         <div style={styles.socialContainer}>
-          <div id="google-signin-button"></div>
-        </div>
+  <div id="google-signup-button"></div>
+</div>
 
         {/* Privacy / Terms */}
         <div style={styles.privacyTerms}>
@@ -148,8 +199,17 @@ const styles = {
   socialContainer: {
     display: 'flex',
     justifyContent: 'center',
-    gap: '1rem',
-    marginBottom: '1rem',
+    margin: '1rem 0',
+    '& div': {
+      width: '100%',
+      display: 'flex',
+      justifyContent: 'center',
+      '& div': {
+        width: '100% !important',
+        borderRadius: '4px !important',
+        height: '40px !important'
+      }
+    }
   },
   privacyTerms: {
     textAlign: 'center',

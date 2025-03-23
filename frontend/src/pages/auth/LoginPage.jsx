@@ -5,7 +5,7 @@ export default function LoginPage() {
     const initializeGoogleSignIn = () => {
       if (window.google) {
         window.google.accounts.id.initialize({
-          client_id: "246081054303-tpkqfprt3lumar3l2gpp2o9441186gi0.apps.googleusercontent.com.apps.googleusercontent.com",
+          client_id: "246081054303-tpkqfprt3lumar3l2gpp2o9441186gi0.apps.googleusercontent.com",
           callback: handleGoogleSignIn,
           auto_select: false,
         });
