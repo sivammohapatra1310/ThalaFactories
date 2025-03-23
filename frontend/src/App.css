@@ -33,6 +33,32 @@
   flex-direction: column;
 }
 
+/* Dark mode overrides */
+.dark-mode {
+  background-color: #1a1a1a;
+  color: #ffffff;
+  min-height: 100vh;
+}
+
+.dark-mode .card {
+  background-color: #2d2d2d;
+  border-color: #404040;
+}
+
+.dark-mode .table {
+  color: #ffffff;
+}
+
+.dark-mode .btn-outline-primary {
+  color: #7cb9ff;
+  border-color: #7cb9ff;
+}
+
+.dark-mode .btn-outline-primary:hover {
+  background-color: #7cb9ff;
+  color: #1a1a1a;
+}
+
 @keyframes logo-spin {
   from {
     transform: rotate(0deg);
