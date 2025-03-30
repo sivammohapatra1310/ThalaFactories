@@ -1,6 +1,9 @@
 import React, { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 export default function LoginPage() {
+  const navigate = useNavigate();
+
   useEffect(() => {
     const initializeGoogleSignIn = () => {
       if (window.google) {
@@ -26,43 +29,36 @@ export default function LoginPage() {
     };
 
     const handleGoogleSignIn = (response) => {
-        try {
-          if (response.error) {
-            throw new Error(response.error);
-          }
-          
-          // Verify the token with your backend
-          const { credential } = response;
-          
-          // Add this fetch call INSIDE the handleGoogleSignIn function
-          fetch('/api/auth/google', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ token: credential }),
-          })
-          .then(response => response.json())
-          .then(data => {
-            // Handle successful login (store token, redirect, etc.)
-            console.log("Login successful:", data);
-            // Example: redirect to dashboard
-            window.location.href = '/dashboard';
-          })
-          .catch(error => {
-            console.error('Login failed:', error);
-            // Show error message to user
-          });
-        } catch (error) {
-          console.error('Google Sign-In Error:', error);
-          // Handle errors here
+      try {
+        if (response.error) {
+          throw new Error(response.error);
         }
-      };
-    // Check if Google script is loaded
+        
+        const { credential } = response;
+        fetch('/api/auth/google', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ token: credential }),
+        })
+        .then(response => response.json())
+        .then(data => {
+          console.log("Login successful:", data);
+          // Redirect to dashboard after successful Google sign-in
+          navigate('/dashboard');
+        })
+        .catch(error => {
+          console.error('Login failed:', error);
+        });
+      } catch (error) {
+        console.error('Google Sign-In Error:', error);
+      }
+    };
+
     if (window.google) {
       initializeGoogleSignIn();
     } else {
-      // Add fallback in case script takes time to load
       const script = document.createElement('script');
       script.src = 'https://accounts.google.com/gsi/client';
       script.async = true;
@@ -73,16 +69,22 @@ export default function LoginPage() {
         initializeGoogleSignIn();
       };
     }
-  }, []);
+  }, [navigate]);
 
-  // Rest of your component remains the same...
+  // Handler for the standard login form submission
+  const handleSubmit = (event) => {
+    event.preventDefault();
+    // Here, you would typically verify the username and password
+    // For now, we'll directly navigate to the dashboard
+    navigate('/dashboard');
+  };
 
   return (
     <div style={styles.container}>
       <div style={styles.card}>
         <h1 style={styles.title}>Factory Simulation</h1>
 
-        <form style={styles.form}>
+        <form style={styles.form} onSubmit={handleSubmit}>
           {/* Username */}
           <div style={styles.formGroup}>
             <label style={styles.label}>Username</label>
@@ -198,12 +200,11 @@ const styles = {
     display: 'flex',
     justifyContent: 'center',
     margin: '1rem 0',
-    // These nested styles will target the Google button elements
-    '& div': {  // First div - container
+    '& div': {
       width: '100%',
       display: 'flex',
       justifyContent: 'center',
-      '& div': {  // Second div - actual button
+      '& div': {
         width: '100% !important',
         borderRadius: '4px !important',
         height: '40px !important'
