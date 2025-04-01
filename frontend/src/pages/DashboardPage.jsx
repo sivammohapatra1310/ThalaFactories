@@ -24,6 +24,29 @@ import {
   addMachine,
   addAdjuster
 } from '../services/api';
+const styles = `
+  .card-hover {
+    transition: all 0.3s ease;
+    border: none;
+  }
+  .card-hover:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+  }
+  .dark-hover:hover {
+    box-shadow: 0 10px 20px rgba(255,255,255,0.1);
+  }
+  .list-item-hover {
+    transition: all 0.2s ease;
+  }
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .animate-slide {
+    animation: slideIn 0.5s ease-out;
+  }
+`;
 
 // Register Chart.js components
 ChartJS.register(
