@@ -1,45 +1,80 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Container, Nav, Navbar, NavDropdown, Card, Button, 
-  Row, Col, ProgressBar, ListGroup, Badge, Form, Alert
+import {
+  Navbar,
+  Offcanvas,
+  Container,
+  Nav,
+  Card,
+  Button,
+  Row,
+  Col,
+  ProgressBar,
+  ListGroup,
+  Badge,
+  Form,
+  Alert
 } from 'react-bootstrap';
-import { fetchMachines, fetchAdjusters, addMachine, addAdjuster } from '../services/api';
+import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend } from 'chart.js';
+import { Line } from 'react-chartjs-2';
+import { FaTools, FaCog, FaChartBar, FaClipboardList, FaSun, FaMoon } from 'react-icons/fa';
+import logo from '../assets/images/logo.png'; // Update path to your logo
+import {
+  fetchMachines,
+  fetchAdjusters,
+  addMachine,
+  addAdjuster
+} from '../services/api';
+
+// Register Chart.js components
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend
+);
 
 export default function DashboardPage() {
   const [darkMode, setDarkMode] = useState(false);
+  const [showSidebar, setShowSidebar] = useState(false);
   const [simulationRunning, setSimulationRunning] = useState(false);
-  
-  // State for form inputs
+
+  // Form states
   const [machineType, setMachineType] = useState('Lathe');
   const [machineMttf, setMachineMttf] = useState(100);
   const [adjusterExpertise, setAdjusterExpertise] = useState(['Lathe']);
-  
-  // State for machines and adjusters
+
+  // Data states
   const [machines, setMachines] = useState([]);
   const [adjusters, setAdjusters] = useState([]);
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  
-  // Utilization data
+  const [loading, setLoading] = useState(false);
+
+  // Utilization data (static example)
   const [utilization] = useState({
     machines: 78,
-    adjusters: 65
+    adjusters: 65,
   });
 
-  // Toggle functions
+  // Toggle theme
   const toggleTheme = () => setDarkMode(!darkMode);
+  // Toggle simulation
   const toggleSimulation = () => setSimulationRunning(!simulationRunning);
+  // Toggle sidebar
+  const handleSidebarClose = () => setShowSidebar(false);
+  const handleSidebarShow = () => setShowSidebar(true);
 
-  // Load machines and adjusters on component mount
+  // Load data on mount
   useEffect(() => {
     const loadData = async () => {
       try {
         setLoading(true);
         const [machinesData, adjustersData] = await Promise.all([
           fetchMachines(),
-          fetchAdjusters()
+          fetchAdjusters(),
         ]);
-        
         setMachines(machinesData || []);
         setAdjusters(adjustersData || []);
         setError(null);
@@ -50,27 +85,19 @@ export default function DashboardPage() {
         setLoading(false);
       }
     };
-    
     loadData();
   }, []);
 
-  // Handle adding a new machine
+  // Add Machine
   const handleAddMachine = async (e) => {
     e.preventDefault();
-    
     try {
       setLoading(true);
       const newMachine = await addMachine({
         type: machineType,
-        mttf: parseInt(machineMttf)
+        mttf: parseInt(machineMttf),
       });
-      
-      // Make sure the new machine object includes the type
-      const machineWithType = {
-        ...newMachine,
-        type: machineType // Ensure type is included in case API doesn't return it
-      };
-      
+      const machineWithType = { ...newMachine, type: machineType };
       setMachines([machineWithType, ...machines]);
       setError(null);
     } catch (err) {
@@ -81,21 +108,16 @@ export default function DashboardPage() {
     }
   };
 
-  // Handle adding a new adjuster
+  // Add Adjuster
   const handleAddAdjuster = async (e) => {
     e.preventDefault();
-    
     if (!adjusterExpertise.length) {
       setError('Please select at least one expertise');
       return;
     }
-    
     try {
       setLoading(true);
-      const newAdjuster = await addAdjuster({
-        expertise: adjusterExpertise
-      });
-      
+      const newAdjuster = await addAdjuster({ expertise: adjusterExpertise });
       setAdjusters([newAdjuster, ...adjusters]);
       setError(null);
     } catch (err) {
@@ -106,7 +128,7 @@ export default function DashboardPage() {
     }
   };
 
-  // Handle expertise selection change
+  // Handle expertise selection
   const handleExpertiseChange = (e) => {
     const options = e.target.options;
     const selected = [];
@@ -118,63 +140,106 @@ export default function DashboardPage() {
     setAdjusterExpertise(selected);
   };
 
+  // Example chart data
+  const chartData = {
+    labels: ['Day 1', 'Day 2', 'Day 3', 'Day 4', 'Day 5'],
+    datasets: [
+      {
+        label: 'Machine Productivity',
+        data: [65, 59, 80, 81, 56],
+        borderColor: 'rgb(75, 192, 192)',
+        tension: 0.2,
+      },
+      {
+        label: 'Adjuster Productivity',
+        data: [28, 48, 40, 19, 86],
+        borderColor: 'rgb(255, 99, 132)',
+        tension: 0.2,
+      },
+    ],
+  };
+
   return (
-    <div className={darkMode ? "bg-dark text-white min-vh-100" : "bg-light text-dark min-vh-100"}>
-      {/* Navigation Bar */}
-      <Navbar expand="lg" className={darkMode ? "bg-dark navbar-dark" : "bg-light navbar-light"}>
-        <Container>
-          <Navbar.Brand href="#home">TFSS 0.0</Navbar.Brand>
-          <Navbar.Toggle aria-controls="basic-navbar-nav" />
-          <Navbar.Collapse id="basic-navbar-nav">
-            <Nav className="me-auto">
-              <Nav.Link href="#dashboard">Dashboard</Nav.Link>
-              <NavDropdown title="Management" id="management-dropdown">
-                <NavDropdown.Item href="#machines">Machines</NavDropdown.Item>
-                <NavDropdown.Item href="#adjusters">Adjusters</NavDropdown.Item>
-                <NavDropdown.Item href="#queues">Queues</NavDropdown.Item>
-              </NavDropdown>
-              <Nav.Link href="#reports">Reports</Nav.Link>
-              <Nav.Link href="#analytics">Analytics</Nav.Link>
-            </Nav>
-            <Nav>
-              <Form.Check
-                type="switch"
-                id="theme-switch"
-                label="Dark Mode"
-                className="ms-3 text-nowrap"
-                checked={darkMode}
-                onChange={toggleTheme}
-              />
-            </Nav>
-          </Navbar.Collapse>
-        </Container>
+    <div className={darkMode ? 'bg-dark text-white min-vh-100' : 'bg-light text-dark min-vh-100'}>
+      {/* TOP NAVBAR */}
+      <Navbar bg={darkMode ? 'dark' : 'light'} variant={darkMode ? 'dark' : 'light'} className="px-3">
+        <Button variant={darkMode ? 'outline-light' : 'outline-dark'} onClick={handleSidebarShow}>
+          <FaCog />
+        </Button>
+        <Navbar.Brand className="ms-3 d-flex align-items-center" href="#home">
+          <img
+            src={logo}
+            alt="Brand Logo"
+            width="50"
+            height="50"
+            className="d-inline-block align-top me-2"
+          />
+          <span>Thala Factories</span>
+        </Navbar.Brand>
+        <Nav className="ms-auto d-flex align-items-center">
+          <Form.Check
+            type="switch"
+            id="theme-switch"
+            label={darkMode ? <FaMoon className="ms-1" /> : <FaSun className="ms-1" />}
+            className="text-nowrap"
+            checked={darkMode}
+            onChange={toggleTheme}
+          />
+        </Nav>
       </Navbar>
 
-      {/* Simulation Controls */}
-      <div className={`py-3 ${darkMode ? 'bg-secondary' : 'bg-light'}`}>
-        <Container>
-          <div className="d-flex gap-2">
-            <Button variant={simulationRunning ? 'danger' : 'success'} onClick={toggleSimulation}>
-              {simulationRunning ? 'Stop Simulation' : 'Start Simulation'}
-            </Button>
-            <Button variant="outline-secondary">Reset Simulation</Button>
-          </div>
-        </Container>
-      </div>
+      {/* SIDEBAR (Offcanvas) */}
+      <Offcanvas show={showSidebar} onHide={handleSidebarClose} className={darkMode ? 'bg-dark text-white' : ''}>
+        <Offcanvas.Header closeButton closeVariant={darkMode ? 'white' : undefined}>
+          <Offcanvas.Title>Navigation</Offcanvas.Title>
+        </Offcanvas.Header>
+        <Offcanvas.Body>
+          <Nav className="flex-column gap-2">
+            <Nav.Link href="#dashboard" className={darkMode ? 'text-white' : 'text-dark'}>
+              <FaChartBar className="me-2" />
+              Dashboard
+            </Nav.Link>
+            <Nav.Link href="#machines" className={darkMode ? 'text-white' : 'text-dark'}>
+              <FaTools className="me-2" />
+              Machines
+            </Nav.Link>
+            <Nav.Link href="#adjusters" className={darkMode ? 'text-white' : 'text-dark'}>
+              <FaClipboardList className="me-2" />
+              Adjusters
+            </Nav.Link>
+            <Nav.Link href="#reports" className={darkMode ? 'text-white' : 'text-dark'}>
+              Reports
+            </Nav.Link>
+            <Nav.Link href="#analytics" className={darkMode ? 'text-white' : 'text-dark'}>
+              Analytics
+            </Nav.Link>
+          </Nav>
+        </Offcanvas.Body>
+      </Offcanvas>
 
-      {/* Error Message */}
+      {/* SIMULATION CONTROLS */}
+      <Container className="mt-3">
+        <div className="d-flex gap-3">
+          <Button variant={simulationRunning ? 'danger' : 'success'} onClick={toggleSimulation}>
+            {simulationRunning ? 'Stop Simulation' : 'Start Simulation'}
+          </Button>
+          <Button variant={darkMode ? 'outline-light' : 'outline-secondary'}>Reset Simulation</Button>
+        </div>
+      </Container>
+
+      {/* ERROR ALERT */}
       {error && (
         <Container className="mt-3">
           <Alert variant="danger">{error}</Alert>
         </Container>
       )}
 
-      {/* Main Content */}
-      <Container className="my-4">
+      {/* MAIN CONTENT */}
+      <Container fluid className="mt-4 px-4">
         <Row className="g-4">
-          {/* Utilization Metrics */}
-          <Col md={4}>
-            <Card className={darkMode ? "bg-secondary text-white" : ""}>
+          {/* UTILIZATION METRICS */}
+          <Col lg={3} md={6}>
+            <Card className={darkMode ? 'bg-secondary text-white' : ''}>
               <Card.Body>
                 <Card.Title>Utilization Metrics</Card.Title>
                 <div className="mb-3">
@@ -182,7 +247,7 @@ export default function DashboardPage() {
                     <span>Machines</span>
                     <span>{utilization.machines}%</span>
                   </div>
-                  <ProgressBar now={utilization.machines} variant="success" className="mb-3" />
+                  <ProgressBar now={utilization.machines} variant="success" className="mb-2" />
                 </div>
                 <div>
                   <div className="d-flex justify-content-between">
@@ -195,24 +260,30 @@ export default function DashboardPage() {
             </Card>
           </Col>
 
-          {/* Machine Queue */}
-          <Col md={4}>
-            <Card className={darkMode ? "bg-secondary text-white" : ""}>
+          {/* MACHINE QUEUE */}
+          <Col lg={3} md={6}>
+            <Card className={darkMode ? 'bg-secondary text-white' : ''}>
               <Card.Body>
                 <Card.Title>
-                  Machine Queue <Badge bg="danger">{machines.length}</Badge>
+                  Machines <Badge bg="danger">{machines.length}</Badge>
                 </Card.Title>
                 {loading ? (
                   <div className="text-center py-3">Loading...</div>
                 ) : (
                   <ListGroup variant="flush">
-                    {machines.map(machine => (
-                      <ListGroup.Item key={machine.machineId} className={darkMode ? "bg-dark text-white" : ""}>
+                    {machines.map((machine) => (
+                      <ListGroup.Item
+                        key={machine.machineId}
+                        className={darkMode ? 'bg-dark text-white' : ''}
+                      >
                         <span className="me-2">⚙️</span>
                         {machine.machineId}
                         <Badge bg="warning" className="ms-2">
-                          {machine.status === 'pending' ? 'Pending' : 
-                           machine.status === 'working' ? 'Working' : 'Broken'}
+                          {machine.status === 'pending'
+                            ? 'Pending'
+                            : machine.status === 'working'
+                            ? 'Working'
+                            : 'Broken'}
                         </Badge>
                         <Badge bg="info" className="ms-2">
                           {machine.type || machineType}
@@ -228,19 +299,22 @@ export default function DashboardPage() {
             </Card>
           </Col>
 
-          {/* Adjuster Queue */}
-          <Col md={4}>
-            <Card className={darkMode ? "bg-secondary text-white" : ""}>
+          {/* ADJUSTER QUEUE */}
+          <Col lg={3} md={6}>
+            <Card className={darkMode ? 'bg-secondary text-white' : ''}>
               <Card.Body>
                 <Card.Title>
-                  Available Adjusters <Badge bg="success">{adjusters.length}</Badge>
+                  Adjusters <Badge bg="success">{adjusters.length}</Badge>
                 </Card.Title>
                 {loading ? (
                   <div className="text-center py-3">Loading...</div>
                 ) : (
                   <ListGroup variant="flush">
-                    {adjusters.map(adjuster => (
-                      <ListGroup.Item key={adjuster.adjusterId} className={darkMode ? "bg-dark text-white" : ""}>
+                    {adjusters.map((adjuster) => (
+                      <ListGroup.Item
+                        key={adjuster.adjusterId}
+                        className={darkMode ? 'bg-dark text-white' : ''}
+                      >
                         <span className="me-2">👨‍🔧</span>
                         {adjuster.adjusterId}
                         <Badge bg="info" className="ms-2">
@@ -259,18 +333,31 @@ export default function DashboardPage() {
               </Card.Body>
             </Card>
           </Col>
+
+          {/* PERFORMANCE TRENDS */}
+          <Col lg={3} md={6}>
+            <Card className={darkMode ? 'bg-secondary text-white' : ''}>
+              <Card.Body>
+                <Card.Title>Performance Trends</Card.Title>
+                <div style={{ height: '200px' }}>
+                  <Line data={chartData} />
+                </div>
+              </Card.Body>
+            </Card>
+          </Col>
         </Row>
 
-        {/* Configuration Panels */}
+        {/* CONFIGURATION FORMS */}
         <Row className="mt-4 g-4">
+          {/* MACHINE CONFIG */}
           <Col md={6}>
-            <Card className={darkMode ? "bg-secondary text-white" : ""}>
+            <Card className={darkMode ? 'bg-secondary text-white' : ''}>
               <Card.Body>
                 <Card.Title>Machine Configuration</Card.Title>
                 <Form onSubmit={handleAddMachine}>
                   <Form.Group className="mb-3">
                     <Form.Label>Machine Type</Form.Label>
-                    <Form.Select 
+                    <Form.Select
                       value={machineType}
                       onChange={(e) => setMachineType(e.target.value)}
                     >
@@ -281,18 +368,14 @@ export default function DashboardPage() {
                   </Form.Group>
                   <Form.Group className="mb-3">
                     <Form.Label>MTTF (hours)</Form.Label>
-                    <Form.Control 
-                      type="number" 
+                    <Form.Control
+                      type="number"
                       value={machineMttf}
                       onChange={(e) => setMachineMttf(e.target.value)}
                       min="1"
                     />
                   </Form.Group>
-                  <Button 
-                    variant="outline-primary" 
-                    type="submit"
-                    disabled={loading}
-                  >
+                  <Button variant="outline-primary" type="submit" disabled={loading}>
                     {loading ? 'Adding...' : 'Add Machine'}
                   </Button>
                 </Form>
@@ -300,18 +383,15 @@ export default function DashboardPage() {
             </Card>
           </Col>
 
+          {/* ADJUSTER CONFIG */}
           <Col md={6}>
-            <Card className={darkMode ? "bg-secondary text-white" : ""}>
+            <Card className={darkMode ? 'bg-secondary text-white' : ''}>
               <Card.Body>
                 <Card.Title>Adjuster Configuration</Card.Title>
                 <Form onSubmit={handleAddAdjuster}>
                   <Form.Group className="mb-3">
                     <Form.Label>Expertise</Form.Label>
-                    <Form.Select 
-                      multiple
-                      value={adjusterExpertise}
-                      onChange={handleExpertiseChange}
-                    >
+                    <Form.Select multiple value={adjusterExpertise} onChange={handleExpertiseChange}>
                       <option>Lathe</option>
                       <option>Drilling</option>
                       <option>Turning</option>
@@ -320,11 +400,7 @@ export default function DashboardPage() {
                       Hold Ctrl (or Cmd) to select multiple items
                     </Form.Text>
                   </Form.Group>
-                  <Button 
-                    variant="outline-primary" 
-                    type="submit"
-                    disabled={loading}
-                  >
+                  <Button variant="outline-primary" type="submit" disabled={loading}>
                     {loading ? 'Adding...' : 'Add Adjuster'}
                   </Button>
                 </Form>
@@ -332,33 +408,23 @@ export default function DashboardPage() {
             </Card>
           </Col>
         </Row>
-
-        {/* Performance Chart */}
-        <Row className="mt-4">
-          <Col>
-            <Card className={darkMode ? "bg-secondary text-white" : ""}>
-              <Card.Body>
-                <Card.Title>Performance Trends</Card.Title>
-                <div className="p-3 bg-dark text-white rounded">
-                  <div className="text-center py-4">
-                    [Performance Chart Placeholder]
-                  </div>
-                </div>
-              </Card.Body>
-            </Card>
-          </Col>
-        </Row>
       </Container>
 
-      {/* Footer */}
-      <footer className={darkMode ? "bg-dark text-white py-4 mt-5" : "bg-light text-dark py-4 mt-5"}>
+      {/* FOOTER */}
+      <footer className={darkMode ? 'bg-dark text-white py-4 mt-5' : 'bg-light text-dark py-4 mt-5'}>
         <Container>
           <div className="text-center">
             <p>© 2024 Thala Factories. All rights reserved.</p>
             <div className="d-flex justify-content-center gap-3">
-              <a href="#privacy" className="text-muted">Privacy</a>
-              <a href="#terms" className="text-muted">Terms</a>
-              <a href="#contact" className="text-muted">Contact</a>
+              <a href="#privacy" className={darkMode ? 'text-white-50' : 'text-muted'}>
+                Privacy
+              </a>
+              <a href="#terms" className={darkMode ? 'text-white-50' : 'text-muted'}>
+                Terms
+              </a>
+              <a href="#contact" className={darkMode ? 'text-white-50' : 'text-muted'}>
+                Contact
+              </a>
             </div>
           </div>
         </Container>
