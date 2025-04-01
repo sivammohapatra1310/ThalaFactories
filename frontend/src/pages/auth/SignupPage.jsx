@@ -1,132 +1,162 @@
-import React, { useEffect } from 'react';
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 export default function SignupPage() {
-  const handleGoogleSignIn = (response) => {
+  const navigate = useNavigate();
+  const [formData, setFormData] = useState({
+    username: '',
+    password: '',
+    confirmPassword: ''
+  });
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const handleChange = (e) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value
+    });
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    
+    // Form validation
+    if (!formData.username || !formData.password || !formData.confirmPassword) {
+      setError('All fields are required');
+      return;
+    }
+    
+    if (formData.password !== formData.confirmPassword) {
+      setError('Passwords do not match');
+      return;
+    }
+    
+    if (formData.password.length < 6) {
+      setError('Password must be at least 6 characters long');
+      return;
+    }
+    
     try {
-      if (response.error) {
-        throw new Error(response.error);
-      }
+      setLoading(true);
+      setError('');
       
-      // Verify the token with your backend
-      const { credential } = response;
-      console.log("Google Sign-In Credential:", credential);
+      console.log('Sending signup request with:', {
+        username: formData.username,
+        password: '********'
+      });
       
-      // Example API call for signup
-      fetch('/api/auth/google-signup', {
+      const response = await fetch('http://localhost:5000/api/auth/signup', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
+          'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ token: credential }),
-      })
-      .then(response => response.json())
-      .then(data => {
-        console.log("Signup successful:", data);
-        // Redirect to login or dashboard
-      })
-      .catch(error => {
-        console.error('Signup failed:', error);
+        body: JSON.stringify({
+          username: formData.username,
+          password: formData.password
+        })
       });
-    } catch (error) {
-      console.error('Google Sign-In Error:', error);
+      
+      console.log('Response status:', response.status);
+      
+      // Get response as text first
+      const responseText = await response.text();
+      console.log('Response text:', responseText);
+      
+      // Only try to parse if there's content
+      let data;
+      try {
+        data = responseText ? JSON.parse(responseText) : {};
+      } catch (parseError) {
+        console.error('JSON parsing error:', parseError);
+        throw new Error('Invalid response from server');
+      }
+      
+      if (!response.ok) {
+        throw new Error(data.message || 'Signup failed');
+      }
+      
+      // Redirect to login page on success
+      console.log('Signup successful!');
+      navigate('/login');
+    } catch (err) {
+      console.error('Signup error:', err);
+      setError(err.message || 'An error occurred during signup');
+    } finally {
+      setLoading(false);
     }
   };
 
-  useEffect(() => {
-    const initializeGoogle = () => {
-      if (window.google) {
-        window.google.accounts.id.initialize({
-          client_id: process.env.REACT_APP_GOOGLE_CLIENT_ID,
-          callback: handleGoogleSignIn,
-          context: 'signup'
-        });
-
-        window.google.accounts.id.renderButton(
-          document.getElementById("google-signup-button"),
-          {
-            type: "standard",
-            theme: "outline",
-            size: "large",
-            text: "signup_with",
-            width: "300"
-          }
-        );
-      }
-    };
-
-    if (window.google) {
-      initializeGoogle();
-    } else {
-      const script = document.createElement('script');
-      script.src = 'https://accounts.google.com/gsi/client';
-      script.async = true;
-      script.defer = true;
-      script.onload = initializeGoogle;
-      document.body.appendChild(script);
-    }
-  }, []);
-
-  // Rest of your component remains the same...
-
   return (
-    
     <div style={styles.container}>
       <div style={styles.card}>
         <h1 style={styles.title}>Factory Simulation</h1>
-
-        <form style={styles.form}>
+        
+        {error && <div style={styles.error}>{error}</div>}
+        
+        <form style={styles.form} onSubmit={handleSubmit}>
           {/* Username */}
           <div style={styles.formGroup}>
             <label style={styles.label}>Username</label>
             <input
               type="text"
+              name="username"
               placeholder="Enter your username"
               style={styles.input}
+              value={formData.username}
+              onChange={handleChange}
+              minLength="3"
+              maxLength="20"
             />
           </div>
-
+          
           {/* Password */}
           <div style={styles.formGroup}>
             <label style={styles.label}>Password</label>
             <input
               type="password"
+              name="password"
               placeholder="••••••••"
               style={styles.input}
+              value={formData.password}
+              onChange={handleChange}
+              minLength="6"
             />
           </div>
-
+          
           {/* Confirm Password */}
           <div style={styles.formGroup}>
             <label style={styles.label}>Confirm Password</label>
             <input
               type="password"
+              name="confirmPassword"
               placeholder="••••••••"
               style={styles.input}
+              value={formData.confirmPassword}
+              onChange={handleChange}
+              minLength="6"
             />
           </div>
-
+          
           {/* Create Account Button */}
-          <button type="submit" style={styles.button}>
-            Create Account
+          <button 
+            type="submit" 
+            style={loading ? {...styles.button, opacity: 0.7} : styles.button}
+            disabled={loading}
+          >
+            {loading ? 'Creating Account...' : 'Create Account'}
           </button>
         </form>
-
+        
         <div style={styles.bottomText}>
           Already have an account? <a href="/login">Sign In</a>
         </div>
-
-        <div style={styles.bottomText}>Or continue with</div>
-
-        {/* Social Sign-In Button (Google only) */}
-        <div style={styles.socialContainer}>
-  <div id="google-signup-button"></div>
-</div>
-
+        
         {/* Privacy / Terms */}
         <div style={styles.privacyTerms}>
-          <a href="#privacy">Privacy</a> • <a href="#terms">Terms</a>
+          <a href="/privacy">Privacy</a> • <a href="/terms">Terms</a>
         </div>
-
+        
         {/* Footer */}
         <div style={styles.footer}>© 2024 Thala Factories</div>
       </div>
@@ -196,21 +226,6 @@ const styles = {
     marginBottom: '1rem',
     fontSize: '0.9rem',
   },
-  socialContainer: {
-    display: 'flex',
-    justifyContent: 'center',
-    margin: '1rem 0',
-    '& div': {
-      width: '100%',
-      display: 'flex',
-      justifyContent: 'center',
-      '& div': {
-        width: '100% !important',
-        borderRadius: '4px !important',
-        height: '40px !important'
-      }
-    }
-  },
   privacyTerms: {
     textAlign: 'center',
     marginBottom: '1rem',
@@ -221,4 +236,12 @@ const styles = {
     fontSize: '0.8rem',
     color: '#888',
   },
+  error: {
+    color: '#e53e3e',
+    backgroundColor: '#fed7d7',
+    padding: '0.75rem',
+    borderRadius: '4px',
+    marginBottom: '1rem',
+    textAlign: 'center',
+  }
 };
