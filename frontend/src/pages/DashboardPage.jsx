@@ -742,7 +742,7 @@ const toggleSimulation = () => {
       <footer className={darkMode ? 'bg-dark text-white py-4 mt-5' : 'bg-light text-dark py-4 mt-5'}>
         <Container>
           <div className="text-center">
-            <p>© 2024 Thala Factories. All rights reserved.</p>
+            <p>© 2025 Thala Factories. All rights reserved.</p>
             <div className="d-flex justify-content-center gap-3">
               <a href="#privacy" className={darkMode ? 'text-white-50' : 'text-muted'}>
                 Privacy
