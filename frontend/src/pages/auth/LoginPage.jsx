@@ -9,30 +9,33 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  
+  const [usertype, setUsertype] = useState(''); // state variable and function to update it
+
   const navigate = useNavigate();
 
   const handleLogin = async (e) => {
     e.preventDefault();
     setError('');
     setLoading(true);
-    
+
+    //await- code will pause here until the request completes
+    // fetch- modern JavaScript function for making HTTP requests
     try {
       const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ username, password }),
+        body: JSON.stringify({ username, password, usertype }),
       });
-      
+
       const data = await response.json();
-      
+
       if (response.ok) {
         // User exists and credentials are correct
         localStorage.setItem('token', data.token);
         localStorage.setItem('user', JSON.stringify(data.user));
-        
+
         // Redirect to dashboard
         navigate('/dashboard');
       } else if (response.status === 404) {
@@ -78,6 +81,22 @@ export default function LoginPage() {
             />
           </div>
 
+          <div style={styles.formGroup}>
+            <label style={styles.label}>User Type</label>
+            <select
+              name="usertype"
+              style={styles.input}
+              value={usertype}
+              onChange={(e) => setUsertype(e.target.value)}
+              required
+            >
+              <option value="">Select your user type</option>
+              <option value="factory head">Factory Head</option>
+              <option value="factory manager">Factory Manager</option>
+              <option value="adjuster">Adjuster</option>
+            </select>
+          </div>
+
           {/* Password */}
           <div style={styles.formGroup}>
             <label style={styles.label}>Password</label>
@@ -92,17 +111,17 @@ export default function LoginPage() {
           </div>
 
           {/* Sign In Button */}
-          <button 
-            type="submit" 
+          <button
+            type="submit"
             style={{
               ...styles.button,
               opacity: loading ? 0.7 : 1,
               cursor: loading ? 'not-allowed' : 'pointer'
-            }} 
+            }}
             disabled={loading}
           >
             {loading ? 'Signing In...' : 'Sign In'}
-          </button>  
+          </button>
         </form>
 
         <div style={styles.bottomText}>

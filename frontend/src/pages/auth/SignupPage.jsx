@@ -6,7 +6,8 @@ export default function SignupPage() {
   const [formData, setFormData] = useState({
     username: '',
     password: '',
-    confirmPassword: ''
+    confirmPassword: '',
+    usertype: ''  // New field for user type
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -22,7 +23,7 @@ export default function SignupPage() {
     e.preventDefault();
     
     // Form validation
-    if (!formData.username || !formData.password || !formData.confirmPassword) {
+    if (!formData.username || !formData.password || !formData.confirmPassword || !formData.usertype) {
       setError('All fields are required');
       return;
     }
@@ -43,7 +44,8 @@ export default function SignupPage() {
       
       console.log('Sending signup request with:', {
         username: formData.username,
-        password: '********'
+        password: '********',
+        usertype: formData.usertype
       });
       
       const response = await fetch('http://localhost:5000/api/auth/signup', {
@@ -53,7 +55,8 @@ export default function SignupPage() {
         },
         body: JSON.stringify({
           username: formData.username,
-          password: formData.password
+          password: formData.password,
+          usertype: formData.usertype  // Sending the user type with signup data
         })
       });
       
@@ -136,6 +139,23 @@ export default function SignupPage() {
               onChange={handleChange}
               minLength="6"
             />
+          </div>
+          
+          {/* User Type */}
+          <div style={styles.formGroup}>
+            <label style={styles.label}>User Type</label>
+            <select
+              name="usertype"
+              style={styles.input}
+              value={formData.usertype}
+              onChange={handleChange}
+              required
+            >
+              <option value="">Select user type</option>
+              <option value="factory head">Factory Head</option>
+              <option value="factory manager">Factory Manager</option>
+              <option value="adjuster">Adjuster</option>
+            </select>
           </div>
           
           {/* Create Account Button */}

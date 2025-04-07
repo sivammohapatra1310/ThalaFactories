@@ -1,6 +1,8 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
+// mongoose is the ODM (Object Data Modeling) library used to interact with MongoDB using JavaScript objects.
 
+//bcryptjs is a library for securely hashing passwords.
 const userSchema = new mongoose.Schema({
   username: {
     type: String,
@@ -14,6 +16,11 @@ const userSchema = new mongoose.Schema({
     type: String,
     required: [true, 'Password is required'],
     minlength: [6, 'Password must be at least 6 characters long']
+  },
+  usertype: {
+    type: String,
+    required: [true, 'UserType is required'],
+    enum: ['factory head', 'factory manager', 'adjuster']
   },
   role: {
     type: String,
