@@ -16,7 +16,7 @@ const app = express();
 
 // Middleware
 app.use(cors({
-  origin: 'http://localhost:5174', // Your frontend URL
+  origin: 'https://thala-factories-m3yn.vercel.app/', // Your frontend URL
   credentials: true // Allow cookies if needed
 }));
 

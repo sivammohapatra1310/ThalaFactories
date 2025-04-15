@@ -2,11 +2,12 @@
 import axios from 'axios';
 
 // Create axios instance with base URL
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
 const API = axios.create({
-  baseURL: 'http://localhost:5000/api',
+  baseURL: `${API_BASE_URL}/api`,
   timeout: 5000
 });
-
 // Machine API calls
 export const fetchMachines = async () => {
   try {
